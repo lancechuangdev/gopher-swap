@@ -83,13 +83,13 @@ The smallest possible upward or downward price movement of a traded asset.
 ![ticks](images/ticks.png)
   - How price is represent in Uniswap V3: `price = token1/token0`
     ```
-    真实价格
+    Actual price
     ↓
     price = token1/token0
     ↓
-    换算成 tick
+    Convert to a tick
     ↓
-    再转成 sqrtPriceX96 = sqrt(1.0001^tick) * 2^96
+    Then convert to sqrtPriceX96 = sqrt(1.0001^tick) * 2^96
     ```
   - Example: ETH/USDT = 1/3000
     | tick     | price    |
@@ -103,7 +103,7 @@ The smallest possible upward or downward price movement of a traded asset.
     ![tick2price](images/tick2price.png)
 
 ### `TickSpacing`
-The minimum interval between valid ticks. Basically means “you can only place liquidity on certain tick intervals,” like only every 60 ticks, instead of every single tick, which keeps the pool cheaper and more efficient to manage. V3 规定只有被 tickSpacing 整除的 tick 才允许被初始化. tickSpacing 越大，每个 tick 流动性越多，tick 之间滑点越大，但会节省跨 tick 操作的 gas。
+The minimum interval between valid ticks. Basically means “you can only place liquidity on certain tick intervals,” like only every 60 ticks, instead of every single tick, which keeps the pool cheaper and more efficient to manage. V3 allows only ticks divisible by `tickSpacing` to be initialized. A larger `tickSpacing` means more liquidity per tick and greater slippage between ticks, but saves gas when crossing ticks.
 
 - Fee tiers and tickSpacing
     | tick     | tickSpacing |
@@ -114,52 +114,52 @@ The minimum interval between valid ticks. Basically means “you can only place 
     | 1%       | 200         |
 
 ### `crossing tick`
-价格穿过一个流动性边界。V3 中LP 不是全区间提供流动性。而是：
+The price crosses a liquidity boundary. In V3, LPs do not provide liquidity across the entire price range. Instead, they provide it within a specific range:
 
 ```
 [tickLower, tickUpper]
 ```
 
-例如：
+For example:
 
 ```
 Alice:
 [100, 200]
 ```
 
-Alice 的 liquidity只在 tick 100 ~ 200 有效, 价格移动时会发生什么?
+Alice's liquidity is active only from tick 100 to tick 200. What happens when the price moves?
 
-假设当前价格：
+Assume the current price is:
 
 ```
 tick = 150
 ```
 
-Alice liquidity 生效。现在有人大量买 ETH, 价格上涨:
+Alice's liquidity is active. Now someone buys a large amount of ETH, causing the price to rise:
 
 ```
 150 -> 160 -> 170 -> ... -> 200 -> 201
 ```
 
-当：
+When the price moves from:
 
 ```
 200 -> 201
 ```
 
-这一瞬间crossing tick 200, 因为tick 200 是：
+At this moment, the price crosses tick 200 because tick 200 is:
 
 ```
-Alice liquidity range 的边界
+The boundary of Alice's liquidity range
 ```
 
-价格越过后Alice liquidity不再有效,于是 V3 必须：
+After the price crosses it, Alice's liquidity is no longer active, so V3 must:
 
 ```
 activeLiquidity -= AliceLiquidity
 ```
 
-这就是crossing tick
+This is called crossing a tick.
 
 ### `Liquidity`
 How much trading capacity an LP provides within a specific price range.
@@ -318,10 +318,10 @@ actual ERC20 transfer
 
 ## Swap
 - `SwapRouter` contains following swap methods:
-  - `exactInput`：多池交换，用户指定输入代币数量，尽可能多地获得输出代币；
-  - `exactInputSingle`：单池交换，用户指定输入代币数量，尽可能多地获得输出代币；
-  - `exactOutput`：多池交换，用户指定输出代币数量，尽可能少地提供输入代币；
-  - `exactOutputSingle`：单池交换，用户指定输出代币数量，尽可能少地提供输入代币。
+  - `exactInput`: A multi-pool swap where the user specifies the input token amount and receives as many output tokens as possible.
+  - `exactInputSingle`: A single-pool swap where the user specifies the input token amount and receives as many output tokens as possible.
+  - `exactOutput`: A multi-pool swap where the user specifies the output token amount and provides as few input tokens as possible.
+  - `exactOutputSingle`: A single-pool swap where the user specifies the output token amount and provides as few input tokens as possible.
 
 - `exactInput`, this is the multi-hop swap function. It handles swaps like: `USDC -> WETH` or multi-hop: `USDC -> WETH -> ARB`. The key idea is: each swap’s output becomes the next swap’s input.
   ```
